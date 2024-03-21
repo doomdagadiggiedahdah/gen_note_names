@@ -11,8 +11,7 @@ def suggest_title_for_note_content(content):
         'content': f"<text>{content}</text> Take this text and create a suitable title. It should contain no punctuation, be fewer than 10 words. Only return the title you suggest itself. Do not include the following characters: '# ^ [ ] | / \ : '. Most importantly, have the title be action oriented, as if I would apply the note title in my life.",
         'options': {
             "temperature": 2
-            },
-        'keep_alive': '0s'
+            }
         }
     ])
     return response['message']['content']
