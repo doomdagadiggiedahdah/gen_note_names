@@ -2,19 +2,20 @@ import ollama
 import os
 import subprocess
 import sys
+import re
 
 
 def suggest_title_for_note_content(content):
     response = ollama.chat(model="mistral", messages=[
         {
         'role': 'user',
-        'content': f"<text>{content}</text> Take this text and create a suitable title. It should contain no punctuation, be fewer than 10 words. Only return the title you suggest itself. Do not include the following characters: '# ^ [ ] | / \ : '. Most importantly, have the title be action oriented, as if I would apply the note title in my life.",
+        'content': f"<text>{content}</text> Take this text and create a suitable title. It should contain no punctuation, be fewer than 10 words. Only return the title you suggest itself. DO NOT INCLUDE the following characters: '# ^ [ ] | / \ : '. Most importantly, have the title be action oriented, as if I would apply the note title in my life. ONLY INCLUDE ONE TITLE.",
         'options': {
-            "temperature": 2
+            "temperature": 1
             }
         }
     ])
-    return response['message']['content']
+    return response['message']['content'].lstrip()
 
 def get_untitled_notes(directory):
     untitled_notes = []
@@ -31,17 +32,34 @@ def rename_file(old_path, new_name):
     return new_path
 
 def update_references_in_notes(directory, old_name, new_name):
+    print(f"{old_name =  }")
+    print(f"{new_name =  }")
+    
+    # Preparing the regex pattern to find the old_name within double brackets
+    pattern = f"\\[\\[{old_name[:-3]}\\]\\]"
+    print(f"{pattern = }")
+    
+    # Walking through the directory and its subdirectories to find all .md files
     for root, dirs, files in os.walk(directory):
         for file in files:
             if file.endswith(".md"):
                 file_path = os.path.join(root, file)
-                with open(file_path, 'r+', encoding='utf-8') as f:
-                    content = f.read()
-                    if old_name in content:
-                        updated_content = content.replace(old_name, new_name)
-                        f.seek(0)
+                # Reading the file content
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    file_content = f.read()
+                
+                if file_path == "/home/mat/Obsidian/ZettleKasten/Untitled 44.md":
+                    #print(file_content)
+                    print("this hsould only happen once")
+                
+                # Performing the search and replace
+                updated_content = re.sub(pattern, f"[[{new_name}]]", file_content)
+                #print("and here's the updated\n\n\n" + updated_content)
+                
+                # Only write back to file if changes were made
+                if updated_content != file_content:
+                    with open(file_path, 'w', encoding='utf-8') as f:
                         f.write(updated_content)
-                        f.truncate()
                         print(f"Updated references in '{file_path}' from '{old_name}' to '{new_name}'")
 
 def main():
@@ -88,3 +106,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+## prompt engineering needs work, getting titles that don't follow the rules and that's frustrating.
